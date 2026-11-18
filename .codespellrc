@@ -1,0 +1,19 @@
+# ex: ft=dosini
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 Robin Jarry
+
+[codespell]
+quiet-level = 35
+skip =
+	.git,
+	.venv,
+	build,
+	dist,
+	*.egg-info,
+	LICENSE,
+ignore-words-list =
+	ND,
+	te,
+	inout,
+	pre-empt,
+	pre-emptively,

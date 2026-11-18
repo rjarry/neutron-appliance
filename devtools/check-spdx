@@ -1,0 +1,57 @@
+#!/bin/sh
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 Robin Jarry
+
+# Every source file must carry an SPDX license identifier and a copyright
+# notice. Files that cannot hold comments are excluded explicitly rather than
+# by guessing, so that adding a new file type is a deliberate decision.
+
+set -eu
+
+license="Apache-2.0"
+
+licensed_files() {
+	git ls-files \
+		':!:*.md' \
+		':!:*.svg' \
+		':!:*.png' \
+		':!:*.json' \
+		':!:*.asc' \
+		':!:LICENSE' \
+		':!:requirements*.txt' \
+		':!:.git*' \
+		"$@"
+}
+
+fail=false
+
+missing_spdx=$(licensed_files | while read -r f; do
+	if ! grep -qF "SPDX-License-Identifier: $license" "$f"; then
+		echo "$f"
+	fi
+done | LC_ALL=C sort -u)
+
+if [ -n "$missing_spdx" ]; then
+	echo "error: missing or wrong 'SPDX-License-Identifier: $license':" >&2
+	echo "$missing_spdx" | sed 's/^/  /' >&2
+	fail=true
+fi
+
+missing_copyright=$(licensed_files | while read -r f; do
+	if ! grep -qE 'Copyright \(c\) [0-9]{4}(-[0-9]{4})? .+' "$f"; then
+		echo "$f"
+	fi
+done | LC_ALL=C sort -u)
+
+if [ -n "$missing_copyright" ]; then
+	echo "error: missing copyright notice:" >&2
+	echo "$missing_copyright" | sed 's/^/  /' >&2
+	fail=true
+fi
+
+if [ "$fail" = true ]; then
+	echo "Add to the top of each file:" >&2
+	echo "  # SPDX-License-Identifier: $license" >&2
+	echo "  # Copyright (c) $(date +%Y) <your name>" >&2
+	exit 1
+fi

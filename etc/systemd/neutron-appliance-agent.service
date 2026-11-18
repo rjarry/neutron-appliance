@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 Robin Jarry
+
+[Unit]
+Description=Neutron appliance agent
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/neutron-appliance-agent
+Restart=always
+RestartSec=5
+# The agent is NOT load-bearing for forwarding. Once the kernel is configured
+# packets flow whether it lives or dies, so an agent failure means
+# "configuration frozen", not "traffic down". Do not add a watchdog that
+# reboots the VM: that would turn a cosmetic failure into an outage.
+
+[Install]
+WantedBy=multi-user.target

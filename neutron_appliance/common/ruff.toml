@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 Robin Jarry
+
+# This package ships inside the appliance image. Keep Neutron out of it.
+extend = "../../pyproject.toml"
+
+[lint.flake8-tidy-imports.banned-api]
+"neutron".msg = "shared code must not import neutron, it ships in the appliance image"
+"neutron_lib".msg = "shared code must not import neutron-lib"

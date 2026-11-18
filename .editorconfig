@@ -1,0 +1,23 @@
+# -*- mode: ini; -*-
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 Robin Jarry
+# ex: ft=dosini
+
+root = true
+
+[*]
+end_of_line = lf
+insert_final_newline = true
+charset = utf-8
+trim_trailing_whitespace = true
+
+[*.py]
+indent_style = space
+indent_size = 4
+max_line_length = 79
+
+[{Makefile,*.mk}]
+indent_style = tab
+
+[*.{toml,yml,yaml}]
+indent_style = tab

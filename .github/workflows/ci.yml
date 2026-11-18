@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 Robin Jarry
+---
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    env:
+      REVISION_RANGE: "${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # force fetch all history
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'  # RHOSO baseline, see docs/plans/stage-pre-0.md
+      - run: make lint
+      - run: make tests
+      - run: make check-patches
+        if: ${{ github.event.pull_request.base.sha && github.event.pull_request.head.sha }}

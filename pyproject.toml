@@ -1,0 +1,133 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 Robin Jarry
+
+[build-system]
+requires = ["setuptools>=40.6.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "neutron-appliance"
+version = "0.0.1"
+description = "Neutron L3 routers backed by service VMs, towards IPsec VPNaaS"
+requires-python = ">= 3.9"
+license = {text = "Apache-2.0"}
+readme = "README.md"
+authors = [
+	{name = "Robin Jarry", email = "rjarry@redhat.com"},
+]
+classifiers = [
+	"Development Status :: 2 - Pre-Alpha",
+	"Intended Audience :: System Administrators",
+	"License :: OSI Approved :: Apache Software License",
+	"Operating System :: POSIX :: Linux",
+	"Programming Language :: Python :: 3",
+	"Topic :: System :: Networking",
+]
+dependencies = []
+
+[project.optional-dependencies]
+# installed in the appliance image, must never pull in neutron
+agent = [
+	"keystoneauth1",
+	"oslo.config",
+	"oslo.log",
+]
+# installed alongside neutron-server
+server = [
+	"neutron",
+	"neutron-lib",
+	"oslo.config",
+	"oslo.log",
+	"openstacksdk",
+]
+
+[project.scripts]
+neutron-appliance-agent = "neutron_appliance.agent.main:main"
+
+[project.entry-points."neutron.db.alembic_migrations"]
+neutron-appliance = "neutron_appliance.server.db.migration:alembic_migrations"
+
+[tool.setuptools.packages.find]
+include = ["neutron_appliance*"]
+
+#
+# Linting and formatting.
+#
+
+[tool.black]
+line-length = 79
+target-version = ["py39"]
+
+[tool.isort]
+atomic = true
+profile = "black"
+line_length = 79
+lines_after_imports = 2
+skip_gitignore = true
+skip_glob = ["tests/data", "profiling"]
+known_first_party = ["neutron_appliance"]
+
+[tool.ruff]
+# also enforces the python syntax floor: RHOSO ships RHEL 9 / python 3.9
+target-version = "py39"
+line-length = 79
+
+[tool.ruff.lint]
+select = [
+	"B",    # bugbear: mutable defaults and other real bugs
+	"C4",   # comprehensions
+	"E",    # pycodestyle errors
+	"F",    # pyflakes
+	"G",    # logging format
+	"I",    # import sorting
+	"TID",  # banned imports, see neutron_appliance/*/ruff.toml
+	"UP",   # pyupgrade, bounded by target-version
+	"W",    # pycodestyle warnings
+	"RUF",  # ruff's own, includes RUF100 unused noqa
+]
+
+[tool.ruff.lint.isort]
+lines-after-imports = 2
+force-sort-within-sections = true
+known-first-party = ["neutron_appliance"]
+no-lines-before = ["local-folder"]
+
+[tool.ruff.format]
+# consistent with the neutron code read alongside this
+quote-style = "single"
+
+[tool.pylint.main]
+persistent = false
+
+[tool.pylint."messages control"]
+enable = ["all"]
+disable = [
+	"broad-except",
+	"cyclic-import",
+	"duplicate-code",
+	"file-ignored",
+	"fixme",
+	"import-outside-toplevel",
+	"line-too-long",
+	"locally-disabled",
+	"missing-docstring",
+	"redefined-outer-name",  # pytest fixtures
+	"suppressed-message",
+	"too-few-public-methods",
+	"too-many-arguments",
+	"too-many-branches",
+	"too-many-instance-attributes",
+	"too-many-locals",
+	"too-many-return-statements",
+	"too-many-statements",
+	"unused-argument",
+	"wrong-import-order",
+]
+
+[tool.pylint.reports]
+msg-template = "{path}:{line} {msg} [{symbol}]"
+output-format = "text"
+score = false
+
+[tool.pylint.format]
+expected-line-ending-format = "LF"

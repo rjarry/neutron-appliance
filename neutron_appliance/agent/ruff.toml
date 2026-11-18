@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 Robin Jarry
+
+# This package runs inside the appliance VM. Keep Neutron out of it.
+extend = "../../pyproject.toml"
+
+[lint.flake8-tidy-imports.banned-api]
+"neutron".msg = "the agent must not import neutron, put shared code in common/"
+"neutron_lib".msg = "the agent must not import neutron-lib"

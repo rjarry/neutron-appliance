@@ -5,4 +5,5 @@
 /build
 /.ruff_cache
 /.pytest_cache
+/.coverage
 /lab/.ssh/

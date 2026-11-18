@@ -44,10 +44,15 @@ format: $(VENV)/.stamp
 	@echo '[ruff format]'
 	@$(in_venv) $(py_files) | xargs $(PYTHON) -m ruff format
 
+# common/ is the wire contract between the server and in-field agents: it is
+# small, pure python, and the one place where a gap in the tests costs a
+# multi-release compatibility bug. Nothing less than full coverage.
 .PHONY: tests
 tests: $(VENV)/.stamp
 	@echo '[pytest]'
-	@$(in_venv) $(PYTHON) -m pytest -q tests/
+	@$(in_venv) $(PYTHON) -m pytest -q tests/ \
+		--cov=neutron_appliance.common \
+		--cov-report=term-missing --cov-fail-under=100
 
 .PHONY: lab-sync lab-setup lab-smoke lab-logs lab-ssh
 lab-sync:
@@ -75,7 +80,7 @@ git-config:
 
 .PHONY: clean
 clean:
-	rm -rf $(VENV) build dist *.egg-info .ruff_cache .pytest_cache
+	rm -rf $(VENV) build dist *.egg-info .ruff_cache .pytest_cache .coverage
 	find . -name '__pycache__' -type d -prune -exec rm -rf {} +
 
 .PHONY: tag-release

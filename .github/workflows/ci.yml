@@ -7,14 +7,14 @@ on: [push, pull_request]
 
 jobs:
   lint:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       REVISION_RANGE: "${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0  # force fetch all history
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.9'  # RHOSO baseline, see docs/plans/stage-pre-0.md
       - run: make lint

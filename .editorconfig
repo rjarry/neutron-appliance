@@ -19,5 +19,9 @@ max_line_length = 79
 [{Makefile,*.mk}]
 indent_style = tab
 
-[*.{toml,yml,yaml}]
+[*.{yml,yaml}]
+indent_style = space
+indent_size = 2
+
+[*.toml]
 indent_style = tab

@@ -10,6 +10,12 @@ working with an agent baked into an image built months earlier. Add fields,
 never repurpose them, and bump `schema_version` when the meaning of an
 existing field changes.
 
+Both halves parse the same way: **unknown fields are ignored**, so that
+adding one is never a breaking change, while an **unknown `schema_version`
+is refused outright**. A field that is present but `null` is treated as
+absent. Both ends must therefore be able to express a complete message using
+only the fields below.
+
 ## 1. Bootstrap
 
 Written once by the server into the instance's config drive, read by
@@ -28,10 +34,16 @@ Written once by the server into the instance's config drive, read by
     "username": "neutron-appliance",
     "password": "<service user secret>",
     "project_name": "service",
+    "user_domain_name": "Default",
+    "project_domain_name": "Default",
     "router_token": "<per-router secret>"
   }
 }
 ```
+
+`ca_cert` is omitted when the endpoint presents a certificate signed by a
+well-known CA. Both domain names default to `Default`. Everything else is
+mandatory.
 
 ## 2. Authentication
 
@@ -123,6 +135,10 @@ Rules:
   "routes": [{"destination": "0.0.0.0/0", "nexthop": "172.24.4.1"}]
 }
 ```
+
+`role` is one of `management`, `internal` or `external`: what the agent has
+to do with the interface, in its own terms. `mtu` is optional and left alone
+when absent.
 
 Three rules, all load-bearing:
 

@@ -10,3 +10,11 @@ never repurpose them.
 
 # bumped when the config document or sync payload gains fields
 SCHEMA_VERSION = 1
+
+# Versions this build can parse. The server must keep accepting every version
+# it has ever shipped: an agent baked into an old image never changes.
+SUPPORTED_SCHEMA_VERSIONS = frozenset({1})
+
+# Version of the HTTP contract itself: paths, headers, status codes. It moves
+# independently of SCHEMA_VERSION, which versions the payloads.
+AGENT_API_VERSION = '1.0'

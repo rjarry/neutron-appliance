@@ -49,6 +49,18 @@ tests: $(VENV)/.stamp
 	@echo '[pytest]'
 	@$(in_venv) $(PYTHON) -m pytest -q tests/
 
+.PHONY: lab-sync lab-setup lab-smoke lab-logs lab-ssh
+lab-sync:
+	@lab/sync.sh
+lab-setup:
+	@lab/setup.sh
+lab-smoke:
+	@lab/smoke.sh
+lab-logs:
+	@lab/logs.sh
+lab-ssh:
+	@lab/ssh.sh
+
 REVISION_RANGE ?= @{u}..
 
 .PHONY: check-patches

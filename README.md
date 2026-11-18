@@ -55,6 +55,7 @@ devtools/       check-spdx, check-patches, check-whitespace, commit-msg
 docs/           design
 └── plans/      implementation plans
 etc/            systemd unit and sample configuration
+lab/            throwaway devstack VM for iterating on the code
 ```
 
 `common/` and `agent/` ship inside the appliance image and **must never import
@@ -75,6 +76,20 @@ make git-config # install the commit-msg hook
 
 Everything runs in a `.venv` created on demand; there is nothing to install by
 hand.
+
+### Testing it for real
+
+[`lab/`](lab/) builds a throwaway devstack VM pointed at this checkout, so
+the edit-test loop is seconds rather than a RHOSO deployment:
+
+```sh
+make lab-sync    # rsync + pip install -e + restart neutron   (~10 s)
+make lab-smoke   # the stage pre-0 acceptance scenario
+make lab-logs    # follow the logs, filtered to our code
+```
+
+First-time setup, the traps worth knowing about, and what this lab
+deliberately cannot tell you are in [lab/README.md](lab/README.md).
 
 ### Contributing
 

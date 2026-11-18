@@ -22,6 +22,7 @@ echo "==> rsync $(cd .. && pwd) -> $LAB_USER@$LAB_IP:$LAB_SRC"
 rsync -a --delete \
 	--exclude '.git/' \
 	--exclude '.venv/' \
+	--exclude 'lab/.ssh/' \
 	--exclude '*.egg-info/' \
 	--exclude '__pycache__/' \
 	--exclude '.ruff_cache/' \

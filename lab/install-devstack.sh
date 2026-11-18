@@ -14,17 +14,15 @@ cd "$(dirname "$0")"
 lab_check_ip
 IP=${1:-$LAB_IP}
 BRANCH=${DEVSTACK_BRANCH:-master}
-SSH="ssh -i $HOME/.ssh/id_devstack_appliance -o IdentitiesOnly=yes -o BatchMode=yes \
-     -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+SSH="ssh $lab_ssh_opts -o BatchMode=yes"
 
 echo "==> copying local.conf"
 # shellcheck disable=SC2086
-scp -i "$HOME/.ssh/id_devstack_appliance" -o IdentitiesOnly=yes -o StrictHostKeyChecking=no \
-    -o UserKnownHostsFile=/dev/null -q local.conf "stack@$IP:/tmp/local.conf"
+scp $lab_ssh_opts -q local.conf "$LAB_USER@$IP:/tmp/local.conf"
 
 echo "==> cloning devstack ($BRANCH) and starting stack.sh"
 # shellcheck disable=SC2086
-$SSH "stack@$IP" bash -s <<EOF
+$SSH "$LAB_USER@$IP" bash -s <<EOF
 set -eu
 if [ ! -d /opt/stack/devstack ]; then
 	git clone -b $BRANCH https://opendev.org/openstack/devstack /opt/stack/devstack

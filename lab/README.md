@@ -33,9 +33,29 @@ vim env.sh                      # put that address in LAB_IP
 ./setup.sh                      # service project, flavors, provider
 ```
 
-`create-vm.sh` generates `~/.ssh/id_devstack_appliance` if it is missing. A
-dedicated passphrase-less key is deliberate: a smartcard key would demand a
-physical touch on every scripted ssh.
+## Access
+
+`create-vm.sh` generates an ad-hoc ed25519 key at `lab/.ssh/` and injects the
+public half through cloud-init. **ssh is key-only**: `ssh_pwauth` is false, so
+passwords are never accepted over the network.
+
+Four deliberate choices:
+
+- **Passphrase-less.** A smartcard or agent key would demand a physical touch
+  on every scripted ssh, and `sync.sh` alone makes several per run.
+- **Kept with the lab, not in `~/.ssh`.** It authenticates nothing but a
+  throwaway VM. Deleting the directory disposes of it; there is no stray
+  credential left in your real ssh config.
+- **Git-ignored, and excluded from the rsync.** `sync.sh` explicitly skips
+  `lab/.ssh/`, so the private key is never copied into the VM it protects.
+- **The console password survives.** `stack` / `stack` still works on
+  `virsh console`, which is the way back in when you break networking badly
+  enough that ssh cannot reach the VM. It buys nothing for an attacker who is
+  not already on the hypervisor.
+
+If you lose the key, the VM is unreachable over ssh and the quickest fix is
+`./create-vm.sh --recreate`. That is the intended lifecycle for something
+disposable.
 
 Host requirements: nested virtualisation, libvirt `qemu:///system`, about
 12 GB of spare RAM and 100 GB of disk. Override with

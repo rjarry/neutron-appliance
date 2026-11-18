@@ -8,24 +8,25 @@
 # Usage: ./create-vm.sh [--recreate]
 
 set -eu
+cd "$(dirname "$0")"
+# shellcheck disable=SC1091
+. ./env.sh
 
-NAME=${NAME:-devstack-appliance}
+NAME=${NAME:-$LAB_NAME}
 VCPUS=${VCPUS:-8}
 RAM_MB=${RAM_MB:-12288}
 DISK_GB=${DISK_GB:-100}
 NET=${NET:-default}
 BASE_IMG=${BASE_IMG:-$HOME/vm/images/noble-base.img}
 DISK=/var/lib/libvirt/images/$NAME.qcow2
-SSH_KEY=${SSH_KEY:-$HOME/.ssh/id_devstack_appliance.pub}
 URI=qemu:///system
 
 die() { echo "error: $*" >&2; exit 1; }
 
 [ -f "$BASE_IMG" ] || die "base image $BASE_IMG not found"
-if [ ! -f "$SSH_KEY" ]; then
-	echo "==> generating ${SSH_KEY%.pub}"
-	ssh-keygen -t ed25519 -N '' -C devstack-appliance -f "${SSH_KEY%.pub}"
-fi
+
+# Ad-hoc, passphrase-less, git-ignored. See the comment in env.sh.
+lab_keygen
 
 if virsh -c $URI dominfo "$NAME" >/dev/null 2>&1; then
 	if [ "${1:-}" = "--recreate" ]; then
@@ -55,12 +56,14 @@ users:
     shell: /bin/bash
     lock_passwd: false
     ssh_authorized_keys:
-      - $(cat "$SSH_KEY")
+      - $(cat "$LAB_SSH_KEY.pub")
+# Console-only password, as the way back in when networking breaks. ssh
+# itself is key-only: ssh_pwauth stays false.
 chpasswd:
   users:
     - {name: stack, password: stack, type: text}
   expire: false
-ssh_pwauth: true
+ssh_pwauth: false
 growpart:
   mode: auto
   devices: ["/"]
@@ -104,7 +107,7 @@ done
 
 echo "==> $NAME is at $IP"
 echo
-echo "    ssh stack@$IP          # password 'stack', or your key"
+echo "    ./ssh.sh                      # once LAB_IP is set"
 echo "    virsh -c $URI console $NAME"
 echo
 echo "Next: put $IP in env.sh, then ./install-devstack.sh"

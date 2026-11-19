@@ -126,6 +126,43 @@ if [ "${left:-0}" -eq 0 ]; then
 else
 	ko "instance $vm is still there"
 fi
+if [ -n "$state" ]; then
+	row=$(sudo mysql -N neutron -e \
+		"select count(*) from appliance_routers where router_id='$rid';" \
+		2>/dev/null || true)
+	if [ "${row:-1}" = "0" ]; then
+		ok "the appliance_routers row went with the router"
+	else
+		ko "the appliance_routers row for $rid survived the router"
+	fi
+fi
+
+# Registering our provider as the default would silently take every router
+# in the cloud away from OVN, and nothing else would notice until a tenant
+# asked for a floating IP.
+say "7. plain routers still belong to OVN"
+if openstack router create "$ROUTER-plain" >/dev/null 2>&1; then
+	pid=$(openstack router show "$ROUTER-plain" -f value -c id)
+	prov=$(sudo mysql -N neutron -e \
+		"select provider_name from providerresourceassociations where resource_id='$pid';" \
+		2>/dev/null || true)
+	case "$prov" in
+	ovn)  ok "provider is 'ovn'" ;;
+	"")   ko "no provider association at all" ;;
+	*)    ko "provider is '$prov', expected 'ovn'" ;;
+	esac
+	row=$(sudo mysql -N neutron -e \
+		"select count(*) from appliance_routers where router_id='$pid';" \
+		2>/dev/null || true)
+	if [ "${row:-0}" = "0" ]; then
+		ok "we did not claim it"
+	else
+		ko "we claimed a router that has no flavor"
+	fi
+	openstack router delete "$pid" >/dev/null 2>&1 || true
+else
+	ko "could not create a router without a flavor"
+fi
 
 printf '\n%s\n' "pass=$pass fail=$fail skip=$skip"
 [ "$fail" -eq 0 ]

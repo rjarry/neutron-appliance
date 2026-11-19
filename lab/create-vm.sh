@@ -53,6 +53,7 @@ users:
   - name: stack
     gecos: devstack
     sudo: "ALL=(ALL) NOPASSWD:ALL"
+    homedir: /opt/stack
     shell: /bin/bash
     lock_passwd: false
     ssh_authorized_keys:
@@ -69,7 +70,7 @@ growpart:
   devices: ["/"]
 resize_rootfs: true
 package_update: true
-packages: [git, jq, net-tools, tcpdump, python3-pip]
+packages: [crudini, git, jq, net-tools, tcpdump, python3-pip]
 write_files:
   - path: /etc/sysctl.d/99-lab.conf
     content: |
@@ -77,7 +78,6 @@ write_files:
       fs.inotify.max_user_instances = 1024
 runcmd:
   - [ sysctl, --system ]
-  - [ install, -d, -o, stack, -g, stack, /opt/stack ]
 EOF
 
 echo "==> creating domain $NAME (${VCPUS} vcpu, ${RAM_MB} MB)"

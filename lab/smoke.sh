@@ -35,6 +35,18 @@ ko()   { printf '  FAIL  %s\n' "$*"; fail=$((fail+1)); }
 sk()   { printf '  SKIP  %s\n' "$*"; skip=$((skip+1)); }
 say()  { printf '\n== %s\n' "$*"; }
 
+# devstack writes ~/.my.cnf for the stack user, so this needs no password
+# and no sudo. 'sudo mysql' runs as root, which has no credentials, and the
+# access denied that follows reads exactly like an empty result: a check
+# that silently reports your code broken when the query never ran.
+db() { mysql -N neutron -e "$1"; }
+
+if ! db "select 1" >/dev/null; then
+	echo "error: cannot query the neutron database as $(whoami)." >&2
+	echo "       expected ~/.my.cnf, written by devstack" >&2
+	exit 1
+fi
+
 say "preconditions"
 fid=$(openstack network flavor show "$FLAVOR" -f value -c id 2>/dev/null || true)
 if [ -n "$fid" ]; then ok "flavor $FLAVOR exists"; else
@@ -70,9 +82,8 @@ else
 fi
 
 say "2. the driver claimed it"
-prov=$(sudo mysql -N neutron -e \
-	"select provider_name from providerresourceassociations where resource_id='$rid';" \
-	2>/dev/null || true)
+prov=$(db "select provider_name from providerresourceassociations
+	where resource_id='$rid';")
 if [ -n "$prov" ]; then
 	ok "provider is '$prov'"
 else
@@ -101,12 +112,11 @@ else
 fi
 
 say "4. the agent synced"
-state=$(sudo mysql -N neutron -e \
-	"select state from appliance_routers where router_id='$rid';" 2>/dev/null || true)
+state=$(db "select state from appliance_routers where router_id='$rid';")
 if [ -n "$state" ]; then
 	ok "state is '$state'"
 else
-	sk "no appliance_routers row: the model is milestone M2"
+	ko "no appliance_routers row for $rid"
 fi
 
 say "5. status is visible to an operator"
@@ -126,15 +136,11 @@ if [ "${left:-0}" -eq 0 ]; then
 else
 	ko "instance $vm is still there"
 fi
-if [ -n "$state" ]; then
-	row=$(sudo mysql -N neutron -e \
-		"select count(*) from appliance_routers where router_id='$rid';" \
-		2>/dev/null || true)
-	if [ "${row:-1}" = "0" ]; then
-		ok "the appliance_routers row went with the router"
-	else
-		ko "the appliance_routers row for $rid survived the router"
-	fi
+row=$(db "select count(*) from appliance_routers where router_id='$rid';")
+if [ "$row" = "0" ]; then
+	ok "the appliance_routers row went with the router"
+else
+	ko "the appliance_routers row for $rid survived the router"
 fi
 
 # Registering our provider as the default would silently take every router
@@ -143,18 +149,16 @@ fi
 say "7. plain routers still belong to OVN"
 if openstack router create "$ROUTER-plain" >/dev/null 2>&1; then
 	pid=$(openstack router show "$ROUTER-plain" -f value -c id)
-	prov=$(sudo mysql -N neutron -e \
-		"select provider_name from providerresourceassociations where resource_id='$pid';" \
-		2>/dev/null || true)
+	prov=$(db "select provider_name from providerresourceassociations
+		where resource_id='$pid';")
 	case "$prov" in
 	ovn)  ok "provider is 'ovn'" ;;
 	"")   ko "no provider association at all" ;;
 	*)    ko "provider is '$prov', expected 'ovn'" ;;
 	esac
-	row=$(sudo mysql -N neutron -e \
-		"select count(*) from appliance_routers where router_id='$pid';" \
-		2>/dev/null || true)
-	if [ "${row:-0}" = "0" ]; then
+	row=$(db "select count(*) from appliance_routers
+		where router_id='$pid';")
+	if [ "$row" = "0" ]; then
 		ok "we did not claim it"
 	else
 		ko "we claimed a router that has no flavor"

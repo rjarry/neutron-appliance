@@ -53,6 +53,13 @@ else
 	exit 1
 fi
 
+# Idempotent, and cheap when there is nothing to apply. Doing it here rather
+# than in setup.sh means a new revision never silently misses the database
+# you are testing against.
+echo "==> database schema"
+sudo "$LAB_VENV/bin/neutron-db-manage" --config-file /etc/neutron/neutron.conf \
+	--subproject neutron-appliance upgrade heads
+
 if [ "$restart" != true ]; then
 	echo "==> not restarting (--no-restart)"
 	exit 0

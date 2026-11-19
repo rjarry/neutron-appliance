@@ -5,6 +5,9 @@
 # Every source file must carry an SPDX license identifier and a copyright
 # notice. Files that cannot hold comments are excluded explicitly rather than
 # by guessing, so that adding a new file type is a deliberate decision.
+#
+# The alembic *_HEAD files are read whole and compared to a revision hash, so
+# a comment in them would break neutron-db-manage.
 
 set -eu
 
@@ -18,6 +21,7 @@ licensed_files() {
 		':!:*.json' \
 		':!:*.asc' \
 		':!:LICENSE' \
+		':!:*_HEAD' \
 		':!:requirements*.txt' \
 		':!:.git*' \
 		"$@"

@@ -50,6 +50,14 @@ neutron-appliance = "neutron_appliance.server.db.migration:alembic_migrations"
 [tool.setuptools.packages.find]
 include = ["neutron_appliance*"]
 
+# The alembic revisions are not importable modules: versions/ is not a python
+# package, and neutron-db-manage loads what is in it by path.
+[tool.setuptools.package-data]
+"neutron_appliance.server.db.migration.alembic_migrations" = [
+	"script.py.mako",
+	"versions/*",
+]
+
 #
 # Linting and formatting.
 #
@@ -123,6 +131,26 @@ disable = [
 	"unused-argument",
 	"wrong-import-order",
 ]
+
+# The server half runs inside neutron-server and is linted here without it:
+# neutron pins a python version and a dependency tree that this repository
+# deliberately does not carry, and the appliance image must never see it at
+# all. Unresolved imports from that stack are therefore expected.
+[tool.pylint.typecheck]
+ignored-modules = [
+	"alembic",
+	"neutron",
+	"neutron_lib",
+	"openstack",
+	"oslo_config",
+	"oslo_log",
+	"sqlalchemy",
+]
+
+# alembic looks these up by name in every revision script: lower case is
+# mandatory, however much they look like constants.
+[tool.pylint.basic]
+good-names = ["revision", "down_revision", "branch_labels"]
 
 [tool.pylint.reports]
 msg-template = "{path}:{line} {msg} [{symbol}]"

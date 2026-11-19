@@ -54,13 +54,16 @@ tests: $(VENV)/.stamp
 		--cov=neutron_appliance.common \
 		--cov-report=term-missing --cov-fail-under=100
 
-.PHONY: lab-sync lab-setup lab-smoke lab-logs lab-ssh
+.PHONY: lab-sync lab-setup lab-smoke lab-tests lab-logs lab-ssh
 lab-sync:
 	@lab/sync.sh
 lab-setup:
 	@lab/setup.sh
 lab-smoke:
 	@lab/smoke.sh
+# The tests that need neutron, which is not installed here on purpose.
+lab-tests:
+	@lab/tests.sh
 lab-logs:
 	@lab/logs.sh
 lab-ssh:

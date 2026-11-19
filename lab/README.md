@@ -70,6 +70,7 @@ Host requirements: nested virtualisation, libvirt `qemu:///system`, about
 | `sync.sh` | **The inner loop.** rsync the checkout, `pip install -e` into devstack's venv, restart neutron, report which services failed to come back |
 | `setup.sh` | Service project, `appliance-agent` role, nova flavor, image, neutron service provider, network flavor and profile. Idempotent |
 | `smoke.sh` | The stage pre-0 acceptance scenario, as PASS/FAIL/SKIP checks |
+| `tests.sh` | The unit tests, including the ones `make tests` skips because they import Neutron |
 | `logs.sh` | Follow neutron logs filtered to `appliance`, `Traceback` and `ERROR`. `-a` for everything |
 | `cleanup.sh` | Delete what the lab creates, by ID |
 | `ssh.sh` | Run a command in, or open a shell on, the VM |

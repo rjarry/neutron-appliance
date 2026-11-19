@@ -85,8 +85,13 @@ the edit-test loop is seconds rather than a RHOSO deployment:
 ```sh
 make lab-sync    # rsync + pip install -e + restart neutron   (~10 s)
 make lab-smoke   # the stage pre-0 acceptance scenario
+make lab-tests   # the unit tests that need neutron
 make lab-logs    # follow the logs, filtered to our code
 ```
+
+`make tests` skips everything that imports Neutron: it is not installed here,
+deliberately, and it never reaches the appliance image. `make lab-tests` runs
+the whole suite where Neutron lives.
 
 First-time setup, the traps worth knowing about, and what this lab
 deliberately cannot tell you are in [lab/README.md](lab/README.md).

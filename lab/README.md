@@ -11,6 +11,7 @@ everything stage pre-0 cares about.
 vim ../neutron_appliance/server/driver.py
 ./sync.sh        # rsync + pip install -e + restart neutron   (~10 s)
 ./smoke.sh       # the stage pre-0 acceptance scenario
+./api.sh         # the sync and status endpoints, over HTTP
 ./logs.sh        # follow the logs, filtered to our code
 ```
 
@@ -70,6 +71,7 @@ Host requirements: nested virtualisation, libvirt `qemu:///system`, about
 | `sync.sh` | **The inner loop.** rsync the checkout, `pip install -e` into devstack's venv, restart neutron, report which services failed to come back |
 | `setup.sh` | Service project, `appliance-agent` role, nova flavor, image, neutron service provider, network flavor and profile. Idempotent |
 | `smoke.sh` | The stage pre-0 acceptance scenario, as PASS/FAIL/SKIP checks |
+| `api.sh` | The sync and status endpoints over HTTP, with `curl`, the way an agent will call them: rotation, the grace window, and the per-router token bound to the URL |
 | `tests.sh` | The unit tests, including the ones `make tests` skips because they import Neutron |
 | `logs.sh` | Follow neutron logs filtered to `appliance`, `Traceback` and `ERROR`. `-a` for everything |
 | `cleanup.sh` | Delete what the lab creates, by ID |
@@ -81,6 +83,11 @@ Host requirements: nested virtualisation, libvirt `qemu:///system`, about
 This is deliberate. A `service_provider` line pointing at a class that does
 not exist takes `neutron-api` down, and the reason appears in no obvious log.
 Until milestone M2 exists, `setup.sh` configures everything else and says so.
+
+**An unset `api_extensions_path` is a 404, not an error.** Neutron starts
+perfectly happily without our endpoints and says nothing at all; the agent
+just gets a 404 from a healthy server. `setup.sh` sets it, and `api.sh`
+checks that the `appliance` alias is listed before testing anything.
 
 **Never append `:default` to the `service_provider` line.** With the OVN L3
 plugin, `_OvnPlusProviderConfiguration` swallows the resulting error at DEBUG

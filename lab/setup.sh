@@ -22,6 +22,10 @@ PROVIDER=${PROVIDER:-appliance}
 FLAVOR=${FLAVOR:-appliance-router}
 SVC_PROJECT=${SVC_PROJECT:-appliance-service}
 NOVA_FLAVOR=${NOVA_FLAVOR:-appliance.small}
+# The shared service user every appliance authenticates as. A throwaway
+# password, for a throwaway cloud, on a VM with no inbound route.
+SVC_USER=${SVC_USER:-neutron-appliance}
+SVC_PASSWORD=${SVC_PASSWORD:-appliance}
 # Until the real image exists (milestone M6), cirros is enough to prove that
 # a VM is booted, attached and deleted.
 APPLIANCE_IMAGE=${APPLIANCE_IMAGE:-}
@@ -30,6 +34,7 @@ APPLIANCE_IMAGE=${APPLIANCE_IMAGE:-}
 ssh $lab_ssh_opts "$LAB_USER@$LAB_IP" \
 	LAB_VENV="$LAB_VENV" DRIVER="$DRIVER" PROVIDER="$PROVIDER" \
 	FLAVOR="$FLAVOR" SVC_PROJECT="$SVC_PROJECT" NOVA_FLAVOR="$NOVA_FLAVOR" \
+	SVC_USER="$SVC_USER" SVC_PASSWORD="$SVC_PASSWORD" \
 	APPLIANCE_IMAGE="$APPLIANCE_IMAGE" bash -s <<'REMOTE'
 set -eu
 set +u
@@ -54,13 +59,25 @@ else
 	driver_ok=false
 fi
 
-say "service project and role"
+say "service project, role and user"
 openstack project show "$SVC_PROJECT" >/dev/null 2>&1 || \
 	openstack project create "$SVC_PROJECT" >/dev/null
 openstack role show appliance-agent >/dev/null 2>&1 || \
 	openstack role create appliance-agent >/dev/null
 openstack role add --project "$SVC_PROJECT" --user admin admin >/dev/null 2>&1 || true
 note "project: $(openstack project show "$SVC_PROJECT" -f value -c id)"
+
+# appliance-agent is the whole authority of this user, by design: its
+# password sits on every appliance's config drive, so one compromised
+# appliance must not yield a credential that can read the cloud. Do not
+# add a second role here, however convenient it looks.
+openstack user show "$SVC_USER" >/dev/null 2>&1 || \
+	openstack user create --project "$SVC_PROJECT" \
+		--password "$SVC_PASSWORD" "$SVC_USER" >/dev/null
+openstack role add --project "$SVC_PROJECT" --user "$SVC_USER" \
+	appliance-agent >/dev/null 2>&1 || true
+note "user: $SVC_USER (roles: $(openstack role assignment list --user "$SVC_USER" \
+	--project "$SVC_PROJECT" --names -f value -c Role | paste -sd,))"
 
 say "nova flavor for appliances"
 openstack flavor show "$NOVA_FLAVOR" >/dev/null 2>&1 || \
@@ -104,6 +121,18 @@ else
 	sudo crudini --set $conf service_providers service_provider "$line"
 	note "registered $line"
 fi
+
+# Without this the appliance endpoints simply do not exist and the agent
+# gets a 404 from a neutron that is otherwise perfectly healthy.
+say "api extensions path"
+ext_path=$("$LAB_VENV/bin/python" -c \
+	'import neutron_appliance.server.api.extensions as e; print(e.__path__[0])')
+paths=$(sudo crudini --get $conf DEFAULT api_extensions_path 2>/dev/null || echo "")
+case ":$paths:" in
+*":$ext_path:"*) note "already set to $ext_path" ;;
+*)  sudo crudini --set $conf DEFAULT api_extensions_path "${paths:+$paths:}$ext_path"
+    note "added $ext_path" ;;
+esac
 
 say "restarting neutron"
 sudo systemctl restart devstack@neutron-api devstack@neutron-rpc-server \

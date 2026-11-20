@@ -120,10 +120,12 @@ else
 fi
 
 say "5. status is visible to an operator"
+# The authoritative answer is the status endpoint, which ./api.sh covers.
+# Tags are the convenience mirror, written by the reconciler.
 tags=$(openstack router show "$ROUTER" -f value -c tags 2>/dev/null || true)
 case "$tags" in
 *appliance:*) ok "router tags: $tags" ;;
-*)            sk "no appliance: tags yet (milestone M3)" ;;
+*)            sk "no appliance: tags yet (milestone M4)" ;;
 esac
 
 say "6. delete leaves nothing behind"

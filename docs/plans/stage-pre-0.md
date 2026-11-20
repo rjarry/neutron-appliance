@@ -104,8 +104,10 @@ neutron-appliance/
 │   │   ├── driver.py           # L3ServiceProvider subclass
 │   │   ├── config.py           # oslo.config options, [appliance] group
 │   │   ├── api/
-│   │   │   ├── extension.py    # sync + status endpoints
-│   │   │   └── validators.py
+│   │   │   └── extensions/
+│   │   │       └── appliance.py  # sync + status endpoints
+│   │   ├── policies.py         # registered policy defaults
+│   │   ├── credentials.py      # per-router token generation and hashing
 │   │   ├── db/
 │   │   │   ├── models.py
 │   │   │   ├── api.py
@@ -166,12 +168,37 @@ console_scripts =
     neutron-appliance-debug = neutron_appliance.tools.debug:main
 neutron.db.alembic_migrations =
     neutron-appliance = neutron_appliance.server.db.migration:alembic_migrations
+neutron.policies =
+    neutron-appliance = neutron_appliance.server.policies:list_rules
+oslo.policy.policies =
+    neutron-appliance = neutron_appliance.server.policies:list_rules
+oslo.config.opts =
+    neutron-appliance = neutron_appliance.server.config:list_opts
 ```
 
 The alembic entry point is the standard mechanism for an out-of-tree Neutron
 plugin to own a migration branch, and it resolves `Q2` for the server side. No
 stevedore entry point is needed for the driver itself — it is loaded by dotted
 path ([`../01-goal.md`](../01-goal.md) §1.1).
+
+`neutron.policies` is what makes the appliance rules exist without an operator
+pasting them into `policy.yaml`; `oslo.policy.policies` is the same list, for
+`oslopolicy-sample-generator`.
+
+### 3.3 The API extension lives in a directory of its own
+
+Implemented as `server/api/extensions/appliance.py`, not the
+`server/api/extension.py` of the layout above. Neutron's extension loader
+does not import a module: it scans each directory in `api_extensions_path`,
+executes every `*.py` it finds there by path, and looks for a class whose
+name is the file's. So the file must be alone in a directory that contains
+nothing else it should not execute, and the class name is dictated by the
+file name — `appliance.py` must define `Appliance`.
+
+Nothing claims the extension either, because `supported_extension_aliases` is
+a plugin's mechanism and we are a service provider behind the L3 plugin. The
+module calls `register_custom_supported_check()` at import time, which is
+Neutron's supported way of saying so.
 
 ---
 

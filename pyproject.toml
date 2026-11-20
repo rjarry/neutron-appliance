@@ -47,6 +47,18 @@ neutron-appliance-agent = "neutron_appliance.agent.main:main"
 [project.entry-points."neutron.db.alembic_migrations"]
 neutron-appliance = "neutron_appliance.server.db.migration:alembic_migrations"
 
+# Registered policy defaults, so that the appliance rules exist without an
+# operator pasting them into policy.yaml. neutron loads this one at startup;
+# the oslo.policy one is what oslopolicy-sample-generator reads.
+[project.entry-points."neutron.policies"]
+neutron-appliance = "neutron_appliance.server.policies:list_rules"
+
+[project.entry-points."oslo.policy.policies"]
+neutron-appliance = "neutron_appliance.server.policies:list_rules"
+
+[project.entry-points."oslo.config.opts"]
+neutron-appliance = "neutron_appliance.server.config:list_opts"
+
 [tool.setuptools.packages.find]
 include = ["neutron_appliance*"]
 
@@ -144,7 +156,12 @@ ignored-modules = [
 	"openstack",
 	"oslo_config",
 	"oslo_log",
+	"oslo_policy",
+	"oslo_serialization",
+	"oslo_utils",
+	"routes",
 	"sqlalchemy",
+	"webob",
 ]
 
 # alembic looks these up by name in every revision script: lower case is

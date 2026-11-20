@@ -1,0 +1,31 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 Robin Jarry
+#
+# Sample policy for the appliance endpoints, for /etc/neutron/policy.yaml.
+#
+# These are the registered defaults, shipped here so that an operator can
+# read them without running oslopolicy-sample-generator. Uncommenting a
+# line changes nothing; edit one only to deviate. Regenerate with:
+#
+#   oslopolicy-sample-generator --namespace neutron-appliance
+#
+# The appliance-agent role is not created for you. It is the whole
+# authority of the shared service user every appliance authenticates as,
+# and it reaches exactly one endpoint:
+#
+#   openstack role create appliance-agent
+#   openstack user create --project service --password-prompt neutron-appliance
+#   openstack role add --project service --user neutron-appliance appliance-agent
+#
+# Do not give that user any other role. Its secret is on every appliance's
+# config drive, so one compromised appliance exposes it; this restriction
+# is what bounds the damage. The per-router token in X-Appliance-Token is
+# what then stops it reading another router's configuration.
+
+# Read the authoritative state of an appliance router.
+# GET /v2.0/appliance/routers/{router_id}
+#"get_appliance_router": "rule:admin_only"
+
+# Report appliance state and receive the configuration document.
+# POST /v2.0/appliance/routers/{router_id}/sync
+#"sync_appliance_router": "(rule:admin_only) or (role:appliance-agent)"

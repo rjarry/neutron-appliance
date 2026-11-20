@@ -1,0 +1,48 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 Robin Jarry
+#
+# Drop-in for /etc/neutron/neutron.conf.d/. Every value shown is the
+# default; uncomment one only to deviate. Regenerate with:
+#
+#   oslo-config-generator --namespace neutron-appliance
+
+[DEFAULT]
+
+# Where neutron looks for out-of-tree API extensions, colon separated.
+# Without this the appliance endpoints simply do not exist, and the agent
+# gets a 404 from a server that is otherwise perfectly healthy. Print the
+# path for this installation with:
+#
+#   python -c 'import neutron_appliance.server.api.extensions as e
+#   print(e.__path__[0])'
+#
+# api_extensions_path = /usr/lib/python3.9/site-packages/neutron_appliance/server/api/extensions
+
+# The appliance driver is dispatched to by router flavor, which needs the
+# flavors service plugin loaded.
+#
+# service_plugins = ...,flavors
+
+[service_providers]
+
+# No ':default' suffix. With the OVN L3 plugin that makes the built-in
+# 'ovn' provider disappear and every unflavored router breaks.
+#
+# service_provider = L3_ROUTER_NAT:appliance:neutron_appliance.server.driver.ApplianceL3Driver
+
+[appliance]
+
+# How often an appliance should call home, in seconds. Sent in every sync
+# answer, so lowering it takes effect one poll later without touching a
+# single appliance.
+#poll_interval_s = 30
+
+# How many missed polls before a router is reported as 'unknown'. That is
+# not an error state: an appliance that has stopped calling home is most
+# likely still forwarding, it just cannot be asked.
+#unknown_after_intervals = 3
+
+# How long the previous per-router token keeps working after a rotation.
+# It covers an agent that crashed between receiving a new token and
+# persisting it.
+#credential_grace_period_s = 86400

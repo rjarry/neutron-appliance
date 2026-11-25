@@ -99,7 +99,7 @@ def test_a_new_router_is_booted(reconciler, collaborators):
     collaborators.appliance_db.get_routers.return_value = [FakeRow(ROUTER_ID)]
     reconciler._tick()
     collaborators.networking.ensure_management_port.assert_called_once_with(
-        mock.ANY, ROUTER_ID
+        ROUTER_ID
     )
     collaborators.appliance_db.issue_credential.assert_called_once_with(
         mock.ANY, ROUTER_ID
@@ -129,7 +129,7 @@ def test_an_orphan_instance_and_port_are_both_reaped(
     reconciler._tick()
     collaborators.compute.delete.assert_called_once_with(INSTANCE_ID)
     collaborators.networking.delete_router_ports.assert_called_once_with(
-        mock.ANY, ROUTER_ID
+        ROUTER_ID
     )
 
 

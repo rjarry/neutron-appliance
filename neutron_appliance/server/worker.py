@@ -84,7 +84,7 @@ class ApplianceWorker(PeriodicWorker):
             actions = reconcile.converge(
                 appliance_db.get_routers(context),
                 compute.instance_router_ids(),
-                networking.port_router_ids(context),
+                networking.port_router_ids(),
             )
         except Exception:
             LOG.exception('reconciler: could not compute the actions to apply')
@@ -107,7 +107,7 @@ class ApplianceWorker(PeriodicWorker):
                 if isinstance(action, reconcile.Boot):
                     self._boot(context, action)
                 else:
-                    self._reap(context, action)
+                    self._reap(action)
             except Exception:
                 LOG.exception(
                     'router %s: reconcile step failed', action.router_id
@@ -125,7 +125,7 @@ class ApplianceWorker(PeriodicWorker):
         unbuilt instance is simply replaced by the next one.
         """
         router_id = action.router_id
-        port_id = networking.ensure_management_port(context, router_id)
+        port_id = networking.ensure_management_port(router_id)
         token = appliance_db.issue_credential(context, router_id)
         if token is None:
             # the row was deleted between converge() and here; the next
@@ -149,7 +149,7 @@ class ApplianceWorker(PeriodicWorker):
         appliance_db.set_instance(context, router_id, instance_id)
 
     @staticmethod
-    def _reap(context, action):
+    def _reap(action):
         """Destroy whatever `router_id` left behind in Nova and Neutron.
 
         The instance first, the ports after: a crash in between leaves a
@@ -161,4 +161,4 @@ class ApplianceWorker(PeriodicWorker):
         instance = compute.find_instance(router_id)
         if instance is not None:
             compute.delete(instance.id)
-        networking.delete_router_ports(context, router_id)
+        networking.delete_router_ports(router_id)

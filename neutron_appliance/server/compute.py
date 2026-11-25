@@ -17,30 +17,19 @@ dies between the two never boots a second one.
 from __future__ import annotations
 
 import base64
-import functools
 import json
 
-from keystoneauth1 import loading as ks_loading
-from openstack import connection
 from oslo_config import cfg
 from oslo_log import log as logging
 
 from neutron_appliance.common import schema
 from neutron_appliance.server import config
+from neutron_appliance.server.osclient import get_connection
 
 
 LOG = logging.getLogger(__name__)
 
 DEBUG_KEYPAIR_NAME = 'neutron-appliance-debug'
-
-
-@functools.cache
-def _get_connection():
-    auth = ks_loading.load_auth_from_conf_options(cfg.CONF, 'nova')
-    session = ks_loading.load_session_from_conf_options(
-        cfg.CONF, 'nova', auth=auth
-    )
-    return connection.Connection(session=session)
 
 
 def credential(router_token: str) -> schema.Credential:
@@ -72,7 +61,7 @@ def public_endpoint() -> str:
     override = config.CONF.appliance.api_endpoint_override
     if override:
         return override
-    session = _get_connection().session
+    session = get_connection().session
     endpoint = session.get_endpoint(service_type='network', interface='public')
     if not endpoint:
         raise RuntimeError(
@@ -121,7 +110,7 @@ def ensure_keypair(public_key: str | None) -> str | None:
     """
     if not public_key:
         return None
-    conn = _get_connection()
+    conn = get_connection()
     if conn.compute.find_keypair(DEBUG_KEYPAIR_NAME) is None:
         conn.compute.create_keypair(
             name=DEBUG_KEYPAIR_NAME, public_key=public_key
@@ -144,7 +133,7 @@ def boot(
     router id, so the orphan sweep can find the instance even if
     neutron-server dies before anything else learns its id.
     """
-    conn = _get_connection()
+    conn = get_connection()
     nova_flavor, image = _parse_flavor_snapshot(flavor_snapshot)
     flavor = conn.compute.find_flavor(nova_flavor, ignore_missing=False)
     found_image = conn.image.find_image(image, ignore_missing=False)
@@ -175,13 +164,13 @@ def boot(
 
 def delete(instance_id: str):
     """Delete one appliance instance. Quiet if it is already gone."""
-    _get_connection().compute.delete_server(instance_id, ignore_missing=True)
+    get_connection().compute.delete_server(instance_id, ignore_missing=True)
     LOG.info('instance %s deletion requested', instance_id)
 
 
 def find_instance(router_id: str):
     """The Nova instance tagged with `router_id`, or None."""
-    for server in _get_connection().compute.servers(tags=router_id):
+    for server in get_connection().compute.servers(tags=router_id):
         return server
     return None
 
@@ -193,6 +182,6 @@ def instance_router_ids():
     """
     return {
         tag
-        for server in _get_connection().compute.servers()
+        for server in get_connection().compute.servers()
         for tag in (server.tags or [])
     }

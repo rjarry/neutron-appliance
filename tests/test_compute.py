@@ -3,7 +3,7 @@
 
 """The Nova wrapper, against a stubbed openstacksdk connection.
 
-Nothing here makes a network call: `_get_connection` is replaced wholesale,
+Nothing here makes a network call: `get_connection` is replaced wholesale,
 so what is actually exercised is the shape of the request this module
 builds and the lookups it does before building it, not openstacksdk or
 Nova themselves.
@@ -31,9 +31,9 @@ INSTANCE_ID = '7f0e2c3a-3333-4000-8000-000000000001'
 @pytest.fixture(autouse=True)
 def clear_connection_cache():
     """The connection getter is memoised; tests must not share one."""
-    compute._get_connection.cache_clear()  # pylint: disable=protected-access
+    compute.get_connection.cache_clear()
     yield
-    compute._get_connection.cache_clear()  # pylint: disable=protected-access
+    compute.get_connection.cache_clear()
 
 
 @pytest.fixture
@@ -73,7 +73,7 @@ def nova_conf(conf):
 @pytest.fixture
 def connection():
     conn = mock.MagicMock()
-    with mock.patch.object(compute, '_get_connection', return_value=conn):
+    with mock.patch.object(compute, 'get_connection', return_value=conn):
         yield conn
 
 

@@ -67,15 +67,18 @@ openstack role show appliance-agent >/dev/null 2>&1 || \
 openstack role add --project "$SVC_PROJECT" --user admin admin >/dev/null 2>&1 || true
 note "project: $(openstack project show "$SVC_PROJECT" -f value -c id)"
 
-# appliance-agent is the whole authority of this user, by design: its
-# password sits on every appliance's config drive, so one compromised
-# appliance must not yield a credential that can read the cloud. Do not
-# add a second role here, however convenient it looks.
+# appliance-agent restricts this user to the appliance sync/status
+# endpoints; member is the minimum Nova and Neutron require to let it
+# boot and delete its own instances and ports. Its password sits on
+# every appliance's config drive, so $SVC_PROJECT -- not the whole
+# cloud -- is the blast radius of one compromised appliance.
 openstack user show "$SVC_USER" >/dev/null 2>&1 || \
 	openstack user create --project "$SVC_PROJECT" \
 		--password "$SVC_PASSWORD" "$SVC_USER" >/dev/null
 openstack role add --project "$SVC_PROJECT" --user "$SVC_USER" \
 	appliance-agent >/dev/null 2>&1 || true
+openstack role add --project "$SVC_PROJECT" --user "$SVC_USER" \
+	member >/dev/null 2>&1 || true
 note "user: $SVC_USER (roles: $(openstack role assignment list --user "$SVC_USER" \
 	--project "$SVC_PROJECT" --names -f value -c Role | paste -sd,))"
 
@@ -133,6 +136,20 @@ case ":$paths:" in
 *)  sudo crudini --set $conf DEFAULT api_extensions_path "${paths:+$paths:}$ext_path"
     note "added $ext_path" ;;
 esac
+
+say "appliance and nova config"
+svc_project_id=$(openstack project show "$SVC_PROJECT" -f value -c id)
+sudo crudini --set $conf appliance service_project_id "$svc_project_id"
+note "[appliance] service_project_id = $svc_project_id ($SVC_PROJECT)"
+
+# The reconciler's own Nova connection and the credential shipped to every
+# appliance are the same [nova] section (see compute.py): it must
+# authenticate as the restricted service user, not devstack's admin-scoped
+# 'nova' account.
+sudo crudini --set $conf nova project_name "$SVC_PROJECT"
+sudo crudini --set $conf nova username "$SVC_USER"
+sudo crudini --set $conf nova password "$SVC_PASSWORD"
+note "[nova] now authenticates as $SVC_USER in $SVC_PROJECT"
 
 say "restarting neutron"
 sudo systemctl restart devstack@neutron-api devstack@neutron-rpc-server \

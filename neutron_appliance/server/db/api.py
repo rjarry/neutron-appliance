@@ -119,6 +119,25 @@ def bump_generation(context, router_id):
     return generation
 
 
+@db_api.retry_if_session_inactive()
+def set_instance(context, router_id, instance_id):
+    """Record the Nova instance booted for a router. Returns True if set.
+
+    Called by the reconciler once `compute.boot()` returns, so a restart
+    in between does not boot a second instance for the same router: the
+    next tick sees the row already pointing at one.
+    """
+    with db_api.CONTEXT_WRITER.using(context):
+        updated = (
+            context.session.query(models.ApplianceRouter)
+            .filter_by(router_id=router_id)
+            .update({'instance_id': instance_id})
+        )
+    if updated:
+        LOG.info('router %s: instance %s recorded', router_id, instance_id)
+    return bool(updated)
+
+
 @dataclasses.dataclass(frozen=True)
 class SyncOutcome:
     """What one sync call left behind, for the caller to answer with.

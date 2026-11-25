@@ -22,6 +22,7 @@ from neutron_lib.plugins import directory
 from oslo_log import log as logging
 
 from neutron_appliance.server.db import api as appliance_db
+from neutron_appliance.server.worker import ApplianceWorker
 
 
 LOG = logging.getLogger(__name__)
@@ -71,6 +72,7 @@ class ApplianceL3Driver(base.L3ServiceProvider):
         # line. Flavors name a driver by dotted path, not by provider name.
         self._driver_path = f'{__name__}.{type(self).__name__}'
         self._flavor_plugin_ref = None
+        self.l3plugin.add_worker(ApplianceWorker())
 
     @property
     def _flavor_plugin(self):

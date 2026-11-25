@@ -46,3 +46,43 @@
 # It covers an agent that crashed between receiving a new token and
 # persisting it.
 #credential_grace_period_s = 86400
+
+# Name of the management network every appliance boots onto. Created,
+# together with its subnet and security group, in service_project_id the
+# first time the reconciler needs it; left alone afterwards.
+#mgmt_network_name = neutron-appliance-mgmt
+
+# Subnet carved out of the management network. Appliances never route
+# tenant traffic over it, so one block shared by every router on this
+# neutron-server is enough.
+#mgmt_subnet_cidr = 192.168.240.0/22
+
+# Project the reconciler creates the management network and boots every
+# appliance instance in. Must be the project the [nova] credentials below
+# are scoped to. No default: booting into the wrong project is not a
+# mistake this code should be able to make silently.
+#service_project_id = <none>
+
+# Nova flavor booted for a router whose service profile metainfo (see
+# docs/02-hooking-neutron.md) does not name its own. No default: a router
+# with no flavor anywhere should fail loudly rather than boot on a guess.
+#nova_flavor = <none>
+
+# Public endpoint written to the config drive instead of the one read
+# from Keystone's catalogue. Needed when the catalogue is not reachable
+# from the management network, for example because it is NAT-only.
+#api_endpoint_override = <none>
+
+# Public key imported into Nova and passed to every appliance at boot,
+# for interactive debugging. Unset means no key is injected and nothing
+# can log in. Whether the image honours it is outside this driver's
+# control.
+#debug_ssh_key = <none>
+
+[nova]
+
+# keystoneauth1 credentials for the service user the reconciler boots
+# appliance instances as. Scoped to service_project_id above. See
+# keystoneauth1's documentation for the full set of options; the usual
+# ones are auth_url, username, password, user_domain_name, project_name
+# and project_domain_name, with auth_type = password.

@@ -39,7 +39,19 @@ def appliance_db():
 
 
 @pytest.fixture
-def provider(appliance_db):
+def no_worker():
+    """These tests exercise callbacks, not the reconciler it registers.
+
+    A real `ApplianceWorker` needs oslo.config and oslo.service set up in
+    ways no test here asks for, so construction is replaced wholesale
+    instead of partially faking that environment.
+    """
+    with mock.patch.object(driver, 'ApplianceWorker') as worker_cls:
+        yield worker_cls
+
+
+@pytest.fixture
+def provider(appliance_db, no_worker):
     """A driver whose flavor, plugin and provider association are fake."""
     l3plugin = mock.MagicMock()
     # the registry is global and our subscriptions are per instance: start
@@ -74,6 +86,12 @@ def test_capabilities_are_unsupported():
     # wrong here and a router can only ever be deleted, never fixed
     assert driver.ApplianceL3Driver.ha_support is base.UNSUPPORTED
     assert driver.ApplianceL3Driver.distributed_support is base.UNSUPPORTED
+
+
+def test_the_reconciler_is_registered(provider, no_worker):
+    provider.l3plugin.add_worker.assert_called_once_with(
+        no_worker.return_value
+    )
 
 
 def test_plain_router_is_accepted(provider, appliance_db):

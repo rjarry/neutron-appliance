@@ -18,8 +18,32 @@ import datetime
 
 from oslo_serialization import jsonutils
 
-from neutron_appliance.common import schema
+from neutron_appliance.common import protocol, schema
 from neutron_appliance.common.protocol import ApplianceState
+
+
+def bootstrap(
+    router_id: str,
+    endpoint: str,
+    credential: schema.Credential,
+    ca_cert: str | None,
+    poll_interval_s: int,
+) -> schema.Bootstrap:
+    """The write-once blob for one router's config drive.
+
+    Pure assembly: gathering the endpoint, the credential and the CA
+    certificate is the reconciler's job, because it needs Keystone and
+    `[nova]` config to do it. This only knows how to turn the result into
+    the document the protocol defines.
+    """
+    return schema.Bootstrap(
+        router_id=router_id,
+        endpoint=endpoint,
+        sync_path=protocol.sync_path(router_id),
+        credential=credential,
+        ca_cert=ca_cert,
+        poll_interval_s=poll_interval_s,
+    )
 
 
 def config_document(router: dict, generation: int) -> schema.ConfigDocument:

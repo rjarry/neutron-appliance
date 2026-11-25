@@ -106,6 +106,14 @@ def test_the_cafile_is_read_whole(nova_conf, tmp_path):
     assert compute.ca_cert() == cert_path.read_text()
 
 
+def test_a_cafile_configured_but_absent_means_no_ca_cert(nova_conf, tmp_path):
+    # devstack sets this by default even without a TLS endpoint to verify
+    nova_conf.set_override(
+        'cafile', str(tmp_path / 'missing.pem'), group='nova'
+    )
+    assert compute.ca_cert() is None
+
+
 #
 # public_endpoint()
 #

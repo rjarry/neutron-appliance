@@ -72,12 +72,22 @@ def public_endpoint() -> str:
 
 
 def ca_cert() -> str | None:
-    """PEM bundle to ship on the config drive, or None for a well-known CA."""
+    """PEM bundle to ship on the config drive, or None for a well-known CA.
+
+    devstack sets `[nova] cafile` by default even when the catalogue has no
+    TLS endpoint at all, in which case the file is never generated: treat a
+    configured-but-absent path the same as no path, rather than wedging the
+    reconciler on every tick over a setting nothing actually uses.
+    """
     path = cfg.CONF.nova.cafile
     if not path:
         return None
-    with open(path, encoding='utf-8') as cert_file:
-        return cert_file.read()
+    try:
+        with open(path, encoding='utf-8') as cert_file:
+            return cert_file.read()
+    except FileNotFoundError:
+        LOG.warning('[nova] cafile %s does not exist, ignoring', path)
+        return None
 
 
 def _parse_flavor_snapshot(flavor_snapshot: str | None):

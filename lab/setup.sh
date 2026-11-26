@@ -26,8 +26,9 @@ NOVA_FLAVOR=${NOVA_FLAVOR:-appliance.small}
 # password, for a throwaway cloud, on a VM with no inbound route.
 SVC_USER=${SVC_USER:-neutron-appliance}
 SVC_PASSWORD=${SVC_PASSWORD:-appliance}
-# Until the real image exists (milestone M6), cirros is enough to prove that
-# a VM is booted, attached and deleted.
+# The appliance image is built with 'make image' (see image/README.md) and
+# uploaded to glance. Without this, cirros is enough to prove that a VM is
+# booted, attached and deleted; the agent will not run in it.
 APPLIANCE_IMAGE=${APPLIANCE_IMAGE:-}
 
 # shellcheck disable=SC2086
@@ -92,7 +93,7 @@ if [ -n "$APPLIANCE_IMAGE" ]; then
 	image=$APPLIANCE_IMAGE
 else
 	image=$(openstack image list -f value -c Name | grep -i cirros | head -1)
-	note "no APPLIANCE_IMAGE set, falling back to '$image' (M6 replaces this)"
+	note "no APPLIANCE_IMAGE set, falling back to '$image' (no agent)"
 fi
 note "image: $image"
 

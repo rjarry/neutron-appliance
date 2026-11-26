@@ -7,7 +7,8 @@
 # by guessing, so that adding a new file type is a deliberate decision.
 #
 # The alembic *_HEAD files are read whole and compared to a revision hash, so
-# a comment in them would break neutron-db-manage.
+# a comment in them would break neutron-db-manage. diskimage-builder reads
+# element-deps line by line and does not ignore comments either.
 
 set -eu
 
@@ -22,6 +23,7 @@ licensed_files() {
 		':!:*.asc' \
 		':!:LICENSE' \
 		':!:*_HEAD' \
+		':!:image/elements/*/element-deps' \
 		':!:requirements*.txt' \
 		':!:.git*' \
 		"$@"

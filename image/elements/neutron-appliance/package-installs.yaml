@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 Robin Jarry
+
+# The agent only. The server stack (neutron, neutron-lib, openstacksdk) is
+# deliberately absent: see the import isolation test and the ruff banned-api
+# rules under neutron_appliance/agent/.
+#
+# ca-certificates is there for pip and for the agent's TLS verification.
+ca-certificates:
+chrony:
+# iproute2 is packaged as 'iproute' on RHEL and CentOS.
+iproute:
+python3:
+# Build tooling: pip builds the agent in an isolated environment and is
+# removed at the end of the install phase (install.d/99) by package-installs.
+python3-pip:
+  build-only: True

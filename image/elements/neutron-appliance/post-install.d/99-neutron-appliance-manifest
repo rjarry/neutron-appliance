@@ -1,0 +1,15 @@
+#!/bin/bash
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 Robin Jarry
+
+# 99: after package-installs has removed the build-only packages at the end
+# of the install phase, so the package list describes the image that will
+# boot, not the build chroot.
+
+set -eu
+set -o pipefail
+
+install -d -m 0755 /etc/neutron-appliance
+python3 /tmp/in_target.d/neutron-appliance-manifest.py \
+	/etc/neutron-appliance/image-manifest.json
+chmod 0644 /etc/neutron-appliance/image-manifest.json

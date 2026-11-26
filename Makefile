@@ -54,6 +54,10 @@ tests: $(VENV)/.stamp
 		--cov=neutron_appliance.common \
 		--cov-report=term-missing --cov-fail-under=100
 
+.PHONY: image
+image:
+	@image/build.sh
+
 .PHONY: lab-sync lab-setup lab-smoke lab-tests lab-logs lab-ssh
 lab-sync:
 	@lab/sync.sh

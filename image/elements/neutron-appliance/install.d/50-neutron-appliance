@@ -1,0 +1,33 @@
+#!/bin/bash
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 Robin Jarry
+
+# install.d runs inside the image, after package-installs has installed the
+# runtime and the build tooling. The source tarball and the unit are dropped
+# in /tmp/in_target.d by extra-data.d.
+
+set -eu
+set -o pipefail
+
+# --prefix=/usr: the unit runs /usr/bin/neutron-appliance-agent, and pip
+# would otherwise install the script in /usr/local/bin.
+python3 -m pip install \
+	--no-cache-dir \
+	--prefix=/usr \
+	'/tmp/in_target.d/neutron-appliance-src.tar.gz[agent]'
+
+if [ ! -x /usr/bin/neutron-appliance-agent ]; then
+	echo "error: pip did not install /usr/bin/neutron-appliance-agent" >&2
+	exit 1
+fi
+
+install -D -m 0644 \
+	/tmp/in_target.d/neutron-appliance-agent.service \
+	/etc/systemd/system/neutron-appliance-agent.service
+
+# NetworkManager brings up the management NIC without cloud-init; chronyd
+# keeps the clock right for token expiry and TLS.
+systemctl enable \
+	NetworkManager.service \
+	chronyd.service \
+	neutron-appliance-agent.service

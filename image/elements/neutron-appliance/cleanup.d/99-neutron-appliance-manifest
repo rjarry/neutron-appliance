@@ -1,0 +1,22 @@
+#!/bin/bash
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 Robin Jarry
+
+# Copy the manifest next to the image. This is the file the reproducibility
+# check compares; it is byte-identical to the one inside the image.
+
+set -eu
+set -o pipefail
+
+destination=${DIB_NEUTRON_APPLIANCE_MANIFEST_PATH:-}
+if [ -z "$destination" ]; then
+	exit 0
+fi
+
+manifest=$TARGET_ROOT/etc/neutron-appliance/image-manifest.json
+if [ ! -f "$manifest" ]; then
+	echo "error: $manifest is missing from the image" >&2
+	exit 1
+fi
+
+install -D -m 0644 "$manifest" "$destination"

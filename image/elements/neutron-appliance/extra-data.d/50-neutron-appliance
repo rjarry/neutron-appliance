@@ -1,0 +1,34 @@
+#!/bin/bash
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 Robin Jarry
+
+# Hand the source tree, the systemd unit and the manifest generator to the
+# hooks that run inside the image. git archive writes the committed tree, not
+# the working directory: build.sh refuses to run on a modified tree so the
+# commit recorded in the manifest is the code that was installed.
+
+set -eu
+set -o pipefail
+
+source=${DIB_NEUTRON_APPLIANCE_SOURCE:-}
+if [ -z "$source" ]; then
+	echo "error: DIB_NEUTRON_APPLIANCE_SOURCE is not set" >&2
+	exit 1
+fi
+
+(
+	cd "$source"
+	git archive \
+		--format=tar.gz \
+		--prefix=neutron-appliance/ \
+		HEAD \
+		LICENSE README.md neutron_appliance pyproject.toml
+) > "$TMP_HOOKS_PATH/neutron-appliance-src.tar.gz"
+
+install -m 0644 \
+	"$source/etc/systemd/neutron-appliance-agent.service" \
+	"$TMP_HOOKS_PATH/neutron-appliance-agent.service"
+
+install -m 0644 \
+	"$source/image/manifest.py" \
+	"$TMP_HOOKS_PATH/neutron-appliance-manifest.py"

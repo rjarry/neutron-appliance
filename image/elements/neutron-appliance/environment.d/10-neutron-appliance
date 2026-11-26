@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 Robin Jarry
+
+# The management NIC is addressed by DHCP. NetworkManager is in the CentOS
+# minimal base, so let it auto-configure every unconfigured interface rather
+# than installing dhcp-all-interfaces' per-interface units.
+export DIB_DHCP_NETWORK_MANAGER_AUTO=${DIB_DHCP_NETWORK_MANAGER_AUTO:-true}

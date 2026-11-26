@@ -1,4 +1,5 @@
 codespell
+keystoneauth1
 pylint
 pytest
 pytest-cov

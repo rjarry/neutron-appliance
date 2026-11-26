@@ -5,6 +5,9 @@
 Description=Neutron appliance agent
 After=network.target
 Wants=network.target
+# The agent retries configuration failures itself, for as long as it takes.
+# Never let systemd give up on it after a burst of restarts.
+StartLimitIntervalSec=0
 
 [Service]
 Type=simple

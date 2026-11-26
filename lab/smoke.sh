@@ -130,7 +130,15 @@ esac
 
 say "6. delete leaves nothing behind"
 openstack router delete "$ROUTER" >/dev/null 2>&1 || ko "router delete failed"
-sleep 10
+# The orphan sweep runs on the reconciler interval (30s by default) plus a
+# random initial delay, so a fixed sleep here just races the next tick.
+if [ -n "$vm" ]; then
+	for _ in $(seq 1 "$TIMEOUT"); do
+		openstack server list --all-projects -f value -c ID 2>/dev/null \
+			| grep -q "$vm" || break
+		sleep 1
+	done
+fi
 left=$(openstack server list --all-projects -f value -c ID 2>/dev/null \
 	| grep -c "${vm:-__none__}" || true)
 if [ "${left:-0}" -eq 0 ]; then
